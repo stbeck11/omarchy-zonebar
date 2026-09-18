@@ -33,7 +33,7 @@ Panel {
   readonly property string homeZone: hostWidget ? hostWidget.homeZone : "UTC"
   readonly property bool hour12: hostWidget ? hostWidget.hour12 : false
   readonly property int scrubMinutes: hostWidget ? hostWidget.scrubMinutes : 0
-  readonly property bool scrubbed: scrubMinutes !== 0
+  readonly property bool scrubbed: hostWidget ? hostWidget.scrubbed : false
 
   property int editingIndex: -1
   property bool addingZone: false
@@ -68,14 +68,13 @@ Panel {
 
   // ---- Scrubbing.
 
-  function setScrub(minutes) {
+  function setScrub(minutes, snap) {
     if (!hostWidget) return
-    var clamped = Math.max(-720, Math.min(720, Math.round(minutes)))
-    hostWidget.scrubMinutes = clamped
+    hostWidget.setScrub(minutes, snap === true)
   }
 
   function resetScrub() {
-    if (hostWidget) hostWidget.scrubMinutes = 0
+    if (hostWidget) hostWidget.resetScrub()
   }
 
   // Typing a time against one row moves every row, because the question being
@@ -343,8 +342,8 @@ Panel {
             maximum: 720
             step: 15
             integer: true
-            value: root.scrubMinutes
-            onMoved: function(value) { root.setScrub(value) }
+            value: Math.max(-720, Math.min(720, root.scrubMinutes))
+            onMoved: function(value) { root.setScrub(value, root.hostWidget && root.hostWidget.snapToQuarterHour) }
             // Right-clicking the track is the fastest way back to now, and
             // costs nothing to offer since the slider already reports it.
             onRightClicked: root.resetScrub()

@@ -51,11 +51,19 @@ entry in `~/.config/omarchy/shell.json`.
 | `zones` | six zones, below | Comma-separated IANA names, in panel order. Add `=Label` to any of them to show a name you actually use. |
 | `homeZone` | blank | The zone every offset is measured from. Blank follows this machine's clock, which is almost always right. Set it when you are travelling but still think in the timezone you left. |
 | `hour12` | `false` | Show `3:05 pm` instead of `15:05`. |
+| `snapToQuarterHour` | `false` | Snap the slider to the nearest quarter-hour clock time (`:00`, `:15`, `:30`, `:45`). Typed times stay exact. |
 | `barDisplay` | `Icon` | How much space the widget takes before you click it. `Icon`, `Icon and time`, or `Time`. |
 | `barZone` | blank | Which zone's time the bar shows when the display includes one. Blank uses the first in your list. |
 
 The defaults are Pacific, Eastern, London, Dubai, Mumbai and Singapore, chosen
 to span a working day rather than to be exhaustive.
+
+Enable **Snap to quarter hour** in the widget settings, or add
+`"snapToQuarterHour": true` to its bar entry in `shell.json`. For example,
+starting at 10:07 and dragging forward 15 minutes selects 10:15. Halfway
+values round forward; the ends select the nearest quarter hour inside the
+12-hour range. A snapped time stays fixed as the live clock advances. **Now**
+or right-clicking the slider or bar icon returns to the live clock.
 
 Editing `zones` by hand is never necessary: adding, removing and reordering
 from inside the panel writes the same string back for you.

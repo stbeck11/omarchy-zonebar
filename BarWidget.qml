@@ -22,6 +22,7 @@ BarWidget {
   readonly property string zoneSpec: setting("zones", Model.DEFAULT_ZONE_SPEC)
   readonly property string configuredHome: String(setting("homeZone", "") || "").trim()
   readonly property bool hour12: setting("hour12", false) === true
+  readonly property bool snapToQuarterHour: setting("snapToQuarterHour", false) === true
   readonly property string barDisplay: setting("barDisplay", "Icon")
   readonly property string configuredBarZone: String(setting("barZone", "") || "").trim()
 
@@ -38,7 +39,15 @@ BarWidget {
   property var offsets: ({})
 
   property date now: new Date()
-  property int scrubMinutes: 0
+  property int freeScrubMinutes: 0
+  // A snapped selection is an instant: minute ticks must not drift it off
+  // the quarter hour. Null means the original, relative scrub is in use.
+  property var snappedUtcMs: null
+  readonly property bool scrubbed: snappedUtcMs !== null || freeScrubMinutes !== 0
+  readonly property int scrubMinutes: snappedUtcMs !== null
+    ? Math.round((snappedUtcMs - now.getTime()) / Model.MS_PER_MINUTE) : freeScrubMinutes
+  readonly property real displayUtcMs: snappedUtcMs !== null
+    ? snappedUtcMs : now.getTime() + freeScrubMinutes * Model.MS_PER_MINUTE
 
   readonly property var barRow: rowFor(configuredBarZone !== "" ? configuredBarZone
                                                                 : (zones.length > 0 ? zones[0].tz : homeZone))
@@ -48,20 +57,20 @@ BarWidget {
   readonly property string barText: showsTime && barTime !== "" ? barTime : ""
 
   function rowFor(tz) {
-    var rows = Model.buildRows(zones, offsets, homeZone, now.getTime(), scrubMinutes, hour12)
+    var rows = Model.buildRows(zones, offsets, homeZone, displayUtcMs, 0, hour12)
     for (var i = 0; i < rows.length; i++) if (rows[i].tz === tz) return rows[i]
     // A bar zone that is not in the list is still worth answering, so it is
     // resolved on its own rather than silently falling back to the first row.
     if (offsets[tz] != null) {
       var single = Model.buildRows([{ tz: tz, label: Model.defaultLabelFor(tz) }],
-                                   offsets, homeZone, now.getTime(), scrubMinutes, hour12)
+                                   offsets, homeZone, displayUtcMs, 0, hour12)
       return single[0]
     }
     return null
   }
 
   function rows() {
-    return Model.buildRows(zones, offsets, homeZone, now.getTime(), scrubMinutes, hour12)
+    return Model.buildRows(zones, offsets, homeZone, displayUtcMs, 0, hour12)
   }
 
   // ---- Config writes.
@@ -95,8 +104,14 @@ BarWidget {
     offsetProc.running = true
   }
 
+  function setScrub(minutes, snap) {
+    freeScrubMinutes = Math.max(-720, Math.min(720, Math.round(minutes)))
+    snappedUtcMs = snap ? Model.snapScrubInstant(now.getTime(), minutes) : null
+  }
+
   function resetScrub() {
-    scrubMinutes = 0
+    snappedUtcMs = null
+    freeScrubMinutes = 0
   }
 
   // ---- Panel plumbing. Bar.findPanelWidget requires open/close/opened on the

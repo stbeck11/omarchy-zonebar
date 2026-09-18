@@ -194,6 +194,18 @@ function isWorkingHour(hour) {
   return hour >= 9 && hour < 18
 }
 
+// Snap the selected instant, rather than the offset from now: at 10:07,
+// dragging forward 15 minutes should select 10:15, not 10:22. Keep the
+// result on a quarter hour inside the slider's +/-12-hour range. Ties go
+// forward. Modern timezone offsets are all multiples of fifteen minutes.
+function snapScrubInstant(baseUtcMs, scrubMinutes) {
+  var quarter = 15 * MS_PER_MINUTE
+  var lower = Math.ceil((baseUtcMs - 720 * MS_PER_MINUTE) / quarter) * quarter
+  var upper = Math.floor((baseUtcMs + 720 * MS_PER_MINUTE) / quarter) * quarter
+  var target = Math.round((baseUtcMs + scrubMinutes * MS_PER_MINUTE) / quarter) * quarter
+  return Math.max(lower, Math.min(upper, target))
+}
+
 // ---- Typing a time.
 //
 // Clicking a time and typing "3pm" is the feature that turns the panel from a

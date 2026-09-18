@@ -29,7 +29,8 @@
       "homeZone": "",
       "hour12": false,
       "barDisplay": "Icon",
-      "barZone": ""
+      "barZone": "",
+      "snapToQuarterHour": false
     },
     "schema": [
       {
@@ -52,6 +53,13 @@
         "label": "12-hour clock",
         "defaultValue": false,
         "description": "Show times as 3:05 pm rather than 15:05. Affects the panel and the bar together."
+      },
+      {
+        "key": "snapToQuarterHour",
+        "type": "boolean",
+        "label": "Snap to quarter hour",
+        "defaultValue": false,
+        "description": "Snap slider selections to the nearest :00, :15, :30 or :45 and hold that time until the next selection or Now. Typed times remain exact."
       },
       {
         "key": "barDisplay",

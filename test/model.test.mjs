@@ -211,3 +211,40 @@ test("the shipped defaults parse into six labelled zones", () => {
   assert.deepEqual(plain(zones).map((z) => z.label),
     ["Pacific", "Eastern", "London", "Dubai", "Mumbai", "Singapore"]);
 });
+
+test("slider snapping selects clock quarters, not multiples of fifteen from now", () => {
+  const now = BASE + 7 * 60000;
+  assert.equal(M.snapScrubInstant(now, 15), BASE + 15 * 60000);
+  assert.equal(M.snapScrubInstant(now, -15), BASE - 15 * 60000);
+  assert.equal(M.snapScrubInstant(now, 0), BASE);
+  assert.equal(M.snapScrubInstant(BASE, 0), BASE);
+});
+
+test("quarter-hour snapping includes seconds and rounds halfway forward", () => {
+  assert.equal(M.snapScrubInstant(BASE + 7.49 * 60000, 0), BASE);
+  assert.equal(M.snapScrubInstant(BASE + 7.5 * 60000, 0), BASE + 15 * 60000);
+  assert.equal(M.snapScrubInstant(BASE - 7.5 * 60000, 0), BASE);
+  const midnight = Date.UTC(2026, 8, 20);
+  assert.equal(M.snapScrubInstant(midnight - 60000, 0), midnight);
+});
+
+test("slider endpoints stay within twelve hours and on quarter hours", () => {
+  for (const minute of [0, 1, 7, 8, 14, 59]) {
+    const now = BASE + minute * 60000 + 30000;
+    for (const scrub of [-1000, -720, -719, 0, 719, 720, 1000]) {
+      const target = M.snapScrubInstant(now, scrub);
+      assert.equal(target % (15 * 60000), 0);
+      assert.ok(Math.abs(target - now) <= 720 * 60000);
+    }
+  }
+});
+
+test("snapped instants render quarter hours across fractional zones and date boundaries", () => {
+  const zones = M.parseZoneSpec("Australia/Brisbane,America/New_York,Asia/Kolkata,Asia/Kathmandu");
+  const offsets = { "Australia/Brisbane": 600, "America/New_York": -240,
+    "Asia/Kolkata": 330, "Asia/Kathmandu": 345 };
+  const selected = M.snapScrubInstant(BASE + 7 * 60000, 15);
+  const rows = M.buildRows(zones, offsets, "Australia/Brisbane", selected, 0, false);
+  assert.deepEqual(plain(rows).map(r => r.time), ["13:15", "23:15", "08:45", "09:00"]);
+  assert.equal(rows[1].dayLabel, "-1d");
+});
