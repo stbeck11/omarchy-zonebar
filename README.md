@@ -43,8 +43,14 @@ omarchy plugin remove stbeck11.zonebar
 
 ## Settings
 
-Everything is optional. Open the widget's settings from the bar, or edit the
-entry in `~/.config/omarchy/shell.json`.
+Click the gear in the panel header. Everything is optional, and every setting
+below is editable there without touching a config file.
+
+Omarchy has no built-in settings UI for bar widgets, so without the gear each
+of these would need an `omarchy bar set` invocation carrying a `--json` flag
+that is easy to forget and silently does nothing when omitted. If you would
+rather edit the file anyway, the entry lives under the bar layout in
+`~/.config/omarchy/shell.json`.
 
 | Setting | Default | What it does |
 | --- | --- | --- |

@@ -79,14 +79,18 @@ BarWidget {
   // goes back to shell.json the same way the first-party clock persists a
   // cycled format: applied locally first so the panel updates on the click,
   // then handed to the shell, which returns it as the same value.
-  function persistZones(nextZones) {
+  function persistSetting(name, value) {
     var entry = { id: root.moduleName }
     for (var key in root.settings) if (key !== "id") entry[key] = root.settings[key]
-    entry.zones = Model.serializeZoneSpec(nextZones)
+    entry[name] = value
     root.settings = entry
     if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
       root.bar.shell.updateEntryInline(root.moduleName, entry)
     refreshOffsets()
+  }
+
+  function persistZones(nextZones) {
+    persistSetting("zones", Model.serializeZoneSpec(nextZones))
   }
 
   function refresh() {

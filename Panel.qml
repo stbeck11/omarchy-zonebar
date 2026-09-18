@@ -37,7 +37,32 @@ Panel {
 
   property int editingIndex: -1
   property bool addingZone: false
+  property bool showingSettings: false
   property var availableZones: []
+
+  // Omarchy has no settings UI for bar widgets: the manifest schema is stored
+  // as metadata and nothing renders it. Without a gear here every option needs
+  // an `omarchy bar set` invocation with a --json flag nobody guesses, so the
+  // panel carries its own.
+  readonly property string homeZoneSetting: hostWidget ? hostWidget.configuredHome : ""
+  readonly property string barZoneSetting: hostWidget ? hostWidget.configuredBarZone : ""
+  readonly property string barDisplaySetting: hostWidget ? hostWidget.barDisplay : "Icon"
+  readonly property bool snapSetting: hostWidget ? hostWidget.snapToQuarterHour === true : false
+
+  // A blank zone means "follow the system" or "use the first zone", which a
+  // list of IANA names has no way to say, so the sentinel says it in words.
+  readonly property string systemSentinel: "Follow this machine"
+  readonly property string firstZoneSentinel: "First zone in the list"
+
+  function zoneOptions(sentinel) {
+    var out = [sentinel]
+    for (var i = 0; i < availableZones.length; i++) out.push(availableZones[i])
+    return out
+  }
+
+  function writeSetting(key, value) {
+    if (hostWidget) hostWidget.persistSetting(key, value)
+  }
 
   function open() {
     root.controller.show()
@@ -204,6 +229,20 @@ Panel {
             }
 
             Item { width: 1; height: 1 }
+          }
+
+          PanelActionButton {
+            anchors.right: parent.right
+            anchors.rightMargin: Style.space(16)
+            anchors.verticalCenter: parent.verticalCenter
+            iconText: "󰒓"
+            tooltipText: root.showingSettings ? "Close settings" : "Settings"
+            foreground: root.bar ? root.bar.foreground : Color.foreground
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onClicked: {
+              root.showingSettings = !root.showingSettings
+              if (root.showingSettings) root.loadZoneList()
+            }
           }
         }
 
@@ -402,6 +441,80 @@ Panel {
             showLabel: false
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             onChanged: function(value) { root.addZone(value) }
+          }
+        }
+
+        // ---- Settings, revealed by the gear.
+        Column {
+          width: parent.width
+          spacing: Style.space(8)
+          visible: root.showingSettings
+
+          PanelSeparator { width: parent.width }
+
+          PanelSectionHeader {
+            x: Style.space(16)
+            text: "SETTINGS"
+            foreground: root.bar ? root.bar.foreground : Color.foreground
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+          }
+
+          Toggle {
+            x: Style.space(16)
+            width: parent.width - Style.space(32)
+            label: "12-hour clock"
+            description: "Show 3:05 pm rather than 15:05"
+            checked: root.hour12
+            foreground: root.bar ? root.bar.foreground : Color.foreground
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onClicked: root.writeSetting("hour12", !root.hour12)
+          }
+
+          Toggle {
+            x: Style.space(16)
+            width: parent.width - Style.space(32)
+            label: "Snap to quarter hour"
+            description: "Slider selects :00, :15, :30 or :45. Typed times stay exact"
+            checked: root.snapSetting
+            foreground: root.bar ? root.bar.foreground : Color.foreground
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onClicked: root.writeSetting("snapToQuarterHour", !root.snapSetting)
+          }
+
+          Dropdown {
+            x: Style.space(16)
+            width: parent.width - Style.space(32)
+            label: "In the bar"
+            options: ["Icon", "Icon and time", "Time"]
+            value: root.barDisplaySetting
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onChanged: function(value) { root.writeSetting("barDisplay", value) }
+          }
+
+          SearchableDropdown {
+            x: Style.space(16)
+            width: parent.width - Style.space(32)
+            label: "Home zone"
+            placeholderText: "Search timezones"
+            options: root.zoneOptions(root.systemSentinel)
+            value: root.homeZoneSetting === "" ? root.systemSentinel : root.homeZoneSetting
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onChanged: function(value) {
+              root.writeSetting("homeZone", value === root.systemSentinel ? "" : value)
+            }
+          }
+
+          SearchableDropdown {
+            x: Style.space(16)
+            width: parent.width - Style.space(32)
+            label: "Zone shown in the bar"
+            placeholderText: "Search timezones"
+            options: root.zoneOptions(root.firstZoneSentinel)
+            value: root.barZoneSetting === "" ? root.firstZoneSentinel : root.barZoneSetting
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            onChanged: function(value) {
+              root.writeSetting("barZone", value === root.firstZoneSentinel ? "" : value)
+            }
           }
         }
 
