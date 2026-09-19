@@ -40,6 +40,12 @@ Panel {
   readonly property bool scrubbed: hostWidget ? hostWidget.scrubbed : false
 
   property int editingIndex: -1
+  // Every tick of the clock and every move of the scrub rebuilds the row list,
+  // which destroys and recreates the delegates underneath it. A half-typed
+  // time therefore lives here rather than inside the field, so an edit
+  // survives a minute rolling over while you are still typing.
+  property string editingText: ""
+  property bool editingFresh: false
   property bool addingZone: false
   property bool showingSettings: false
   property var availableZones: []
@@ -115,12 +121,33 @@ Panel {
     var minuteOfDay = Model.parseTimeInput(text)
     if (minuteOfDay === null) return false
     var base = hostWidget.now.getTime()
-    setScrub(Model.scrubForTargetTime(base, row.offsetMinutes, minuteOfDay))
+    var scrub = Model.scrubForTargetTime(base, row.offsetMinutes, minuteOfDay)
+    // Close the editor first. Moving the scrub rebuilds the rows, which
+    // destroys the delegate this call arrived from, and anything left to run
+    // after that point quietly never does -- which is how the box used to be
+    // left open, empty, over a row that had already answered.
+    cancelEditing()
+    setScrub(scrub)
     return true
+  }
+
+  // Start from the time that row already shows: the question is nearly always
+  // "what if it were a little later there", which is an edit of the current
+  // time rather than a retype of it, and an empty box makes you look the
+  // number up again before you can change it.
+  function beginEditing(index) {
+    if (index < 0 || index >= rows.length) return
+    var row = rows[index]
+    if (!row.resolved) return
+    editingText = row.time
+    editingFresh = true
+    editingIndex = index
   }
 
   function cancelEditing() {
     editingIndex = -1
+    editingText = ""
+    editingFresh = false
   }
 
   // ---- Editing the list.
@@ -278,11 +305,7 @@ Panel {
               acceptedButtons: Qt.LeftButton | Qt.MiddleButton
               onClicked: function(mouse) {
                 if (mouse.button === Qt.MiddleButton) root.removeAt(zoneRow.index)
-                else if (zoneRow.modelData.resolved) {
-                  root.editingIndex = zoneRow.index
-                  timeInput.text = ""
-                  timeInput.forceActiveFocus()
-                }
+                else root.beginEditing(zoneRow.index)
               }
             }
 
@@ -339,11 +362,29 @@ Panel {
                 visible: root.editingIndex === zoneRow.index
                 width: Style.space(90)
                 placeholderText: "3pm"
-                onAccepted: {
-                  if (root.applyTypedTime(zoneRow.index, text)) root.cancelEditing()
-                  else text = ""
-                }
+                onTextChanged: if (visible) root.editingText = text
+                onAccepted: if (!root.applyTypedTime(zoneRow.index, text)) text = ""
                 Keys.onEscapePressed: root.cancelEditing()
+
+                // The field is the view of root.editingText, not the owner of
+                // it, so it takes the text back whenever it appears -- on the
+                // click that opens it, and again on every delegate the row
+                // list rebuilds under it. A fresh open selects the seeded time
+                // so typing replaces it; a rebuild mid-edit puts the cursor
+                // back at the end instead, which is where it was.
+                function restoreEditing() {
+                  text = root.editingText
+                  forceActiveFocus()
+                  if (root.editingFresh) {
+                    selectAll()
+                    root.editingFresh = false
+                  } else {
+                    cursorPosition = text.length
+                  }
+                }
+
+                onVisibleChanged: if (visible) restoreEditing()
+                Component.onCompleted: if (visible) restoreEditing()
               }
 
               // The day boundary, which is the thing people get wrong.

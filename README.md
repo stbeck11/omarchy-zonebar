@@ -25,8 +25,9 @@ time, how far that is from you, and whether it is a reasonable hour there.
   even if your home zone is not in the list. Scrubbed times are explicitly
   marked `selected` and dimmed. Right-click the slider, or press **Now**, to
   return to the brighter live time, marked `now` in the header.
-- **Type a time on any row.** Click a row, type `3pm` or `15:00` or `1500`, and
-  everything else re-reads for that moment.
+- **Type a time on any row.** Click a row and the box opens on that row's
+  current time, ready to edit rather than retype. Type `3pm` or `15:00` or
+  `1500`, and everything else re-reads for that moment.
 - **Add, remove, reorder.** **Add zone** opens a searchable list of every
   timezone this machine knows. Hover any row for controls on the right to move
   it up or down, or remove it; middle-clicking a row removes it too. Changes

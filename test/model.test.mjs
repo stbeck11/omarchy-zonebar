@@ -98,6 +98,21 @@ test("clocks format in both conventions", () => {
   assert.equal(M.formatClock(9, 0, false), "09:00");
 });
 
+// The panel seeds the time box with the time the row is already showing, so
+// pressing enter on an untouched box has to mean "leave it where it is". That
+// only holds while everything formatClock renders is something parseTimeInput
+// reads back, which is a property of the pair rather than of either one.
+test("every rendered clock reads back as the time it rendered", () => {
+  for (const hour12 of [false, true]) {
+    for (let hour = 0; hour < 24; hour++) {
+      for (const minute of [0, 5, 30, 45]) {
+        const rendered = M.formatClock(hour, minute, hour12);
+        assert.equal(M.parseTimeInput(rendered), hour * 60 + minute, rendered);
+      }
+    }
+  }
+});
+
 test("phases split the day into something a glance can use", () => {
   assert.equal(M.phaseFor(3), "night");
   assert.equal(M.phaseFor(9), "morning");
