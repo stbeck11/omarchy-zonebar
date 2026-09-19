@@ -27,8 +27,10 @@ time, how far that is from you, and whether it is a reasonable hour there.
   return to the brighter live time, marked `now` in the header.
 - **Type a time on any row.** Click a row, type `3pm` or `15:00` or `1500`, and
   everything else re-reads for that moment.
-- **Add, remove, reorder.** Changes are written back to your shell config, so
-  they survive a restart.
+- **Add, remove, reorder.** **Add zone** opens a searchable list of every
+  timezone this machine knows. Hover any row for controls on the right to move
+  it up or down, or remove it; middle-clicking a row removes it too. Changes
+  are written back to your shell config, so they survive a restart.
 
 ## Install
 

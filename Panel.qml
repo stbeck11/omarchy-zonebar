@@ -261,9 +261,18 @@ Panel {
             width: content.width
             height: Style.space(40)
 
+            // Hover is tracked with a handler rather than the MouseArea's
+            // containsMouse: the row controls sit on top of that MouseArea and
+            // would steal the hover, so the controls would flicker out of
+            // existence exactly as you reached for them.
+            HoverHandler {
+              id: rowHover
+            }
+
             // The whole row is the click target for typing a time: a small
-            // target on the time text alone would be fiddly, and there is
-            // nothing else on the row that wants a click.
+            // target on the time text alone would be fiddly. Middle click
+            // still removes, for anyone who learned it before the controls
+            // existed.
             MouseArea {
               anchors.fill: parent
               acceptedButtons: Qt.LeftButton | Qt.MiddleButton
@@ -351,17 +360,63 @@ Panel {
               }
             }
 
-            // The offset, pinned right so the column reads as a column.
+            // The offset, pinned right so the column reads as a column. It
+            // steps aside for the row controls on hover rather than making
+            // room for them, so a list of zones stays a list of times.
             Text {
               anchors.right: parent.right
               anchors.rightMargin: Style.space(16)
               anchors.verticalCenter: parent.verticalCenter
               textFormat: Text.PlainText
+              visible: !rowHover.hovered
               text: zoneRow.modelData.offset
               color: root.bar ? root.bar.foreground : Color.foreground
               opacity: zoneRow.modelData.isHome ? 0.45 : 0.75
               font.family: root.bar ? root.bar.fontFamily : undefined
               font.pixelSize: Style.font.body
+            }
+
+            // Reorder and remove. Hidden until the pointer is on the row,
+            // because six zones with three controls each would be eighteen
+            // buttons on a panel whose job is to show the time.
+            Row {
+              anchors.right: parent.right
+              anchors.rightMargin: Style.space(12)
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: Style.space(2)
+              visible: rowHover.hovered
+
+              PanelActionButton {
+                iconText: "\uf077"
+                tooltipText: "Move up"
+                enabled: zoneRow.index > 0
+                opacity: enabled ? 0.8 : 0.25
+                fontSize: Style.font.bodySmall
+                foreground: root.bar ? root.bar.foreground : Color.foreground
+                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+                onClicked: root.moveRow(zoneRow.index, zoneRow.index - 1)
+              }
+
+              PanelActionButton {
+                iconText: "\uf078"
+                tooltipText: "Move down"
+                enabled: zoneRow.index < root.rows.length - 1
+                opacity: enabled ? 0.8 : 0.25
+                fontSize: Style.font.bodySmall
+                foreground: root.bar ? root.bar.foreground : Color.foreground
+                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+                onClicked: root.moveRow(zoneRow.index, zoneRow.index + 1)
+              }
+
+              PanelActionButton {
+                iconText: "\uf00d"
+                tooltipText: "Remove " + zoneRow.modelData.label
+                opacity: 0.8
+                fontSize: Style.font.bodySmall
+                foreground: root.bar ? root.bar.foreground : Color.foreground
+                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+                onClicked: root.removeAt(zoneRow.index)
+              }
             }
           }
         }
