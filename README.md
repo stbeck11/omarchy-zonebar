@@ -98,6 +98,22 @@ The arithmetic lives in `Model.js`, which is Qt-free and covered by tests:
 node --test test/model.test.mjs
 ```
 
+## Requirements
+
+Everything below ships with Omarchy, so there is nothing to install alongside
+the plugin.
+
+| Needs | Why | If missing |
+| --- | --- | --- |
+| Omarchy Quattro with the Quickshell shell | the plugin is a bar widget | will not load |
+| `date` from coreutils | reports each zone's current UTC offset | zones show as unresolved |
+| tzdata at `/usr/share/zoneinfo` | the timezone database itself | zones show as unresolved |
+| `timedatectl` | detects your own zone, and lists zones for the picker | falls back to reading `/etc/localtime` and walking the zoneinfo directory |
+
+The plugin makes no network requests, reads no files outside the timezone
+database, and stores its configuration in your existing
+`~/.config/omarchy/shell.json` alongside every other bar widget.
+
 ## Credit
 
 Inspired by [ZoneBar](https://github.com/yazinsai/zonebar) by Yazin Alirhayim,
