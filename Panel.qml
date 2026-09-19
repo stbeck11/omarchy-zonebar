@@ -31,6 +31,10 @@ Panel {
   // clock. The panel holds no duplicate state beyond what it is editing.
   readonly property var rows: hostWidget ? hostWidget.rows() : []
   readonly property string homeZone: hostWidget ? hostWidget.homeZone : "UTC"
+  // rowFor also resolves home when it is not one of the listed zones, and
+  // uses the same selected instant and clock format as every other row.
+  readonly property var homeRow: hostWidget ? hostWidget.rowFor(homeZone) : null
+  readonly property string homeTime: homeRow && homeRow.resolved ? homeRow.time : "--:--"
   readonly property bool hour12: hostWidget ? hostWidget.hour12 : false
   readonly property int scrubMinutes: hostWidget ? hostWidget.scrubMinutes : 0
   readonly property bool scrubbed: hostWidget ? hostWidget.scrubbed : false
@@ -219,11 +223,11 @@ Panel {
             Text {
               textFormat: Text.PlainText
               anchors.verticalCenter: parent.verticalCenter
-              // Saying "now" plainly is worth a word, because the whole panel
-              // lies convincingly while the slider is off zero.
-              text: root.scrubbed ? Model.formatOffsetDelta(root.scrubMinutes) + " from now" : "now"
+              // Show the selected home time so the slider can be aimed at a
+              // clock time directly. Explicitly distinguish selected and live times.
+              text: root.homeTime + (root.scrubbed ? " · selected" : " · now")
               color: root.bar ? root.bar.foreground : Color.foreground
-              opacity: root.scrubbed ? 1.0 : 0.6
+              opacity: root.scrubbed ? 0.6 : 1.0
               font.family: root.bar ? root.bar.fontFamily : undefined
               font.pixelSize: Style.font.body
             }
